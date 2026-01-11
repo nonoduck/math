@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>直式乘法挑戰 - 捲軸優化版</title>
+    <title>響應式直式乘法挑戰</title>
     <style>
         :root {
             --primary: #3498db;
@@ -11,119 +11,125 @@
             --danger: #e74c3c;
             --dark: #2c3e50;
             --bg: #f0f3f6;
-            /* 固定格子大小，確保好點擊 */
-            --cell-size: clamp(55px, 10vw, 75px); 
+            /* 定義基礎單位，隨螢幕縮放 */
+            --unit: min(6.5vw, 6.5vh, 70px); 
         }
 
         body {
             font-family: "Microsoft JhengHei", sans-serif;
             margin: 0;
             background: var(--bg);
-            /* 允許捲動 */
-            overflow: auto;
+            overflow: hidden;
             touch-action: none;
             user-select: none;
         }
 
-        /* 固定頂部選單 */
+        /* 頂部控制區 (高度縮減以利手機顯示) */
         #header {
-            position: sticky;
-            top: 0;
-            height: 120px;
+            height: 18vh;
             background: var(--dark);
             color: white;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 2000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
         }
 
-        .ctrl-row { margin: 5px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
-        input { width: 70px; font-size: 1.2rem; text-align: center; border-radius: 5px; border: none; padding: 5px; }
-        button { padding: 8px 15px; font-size: 1rem; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; }
+        .ctrl-row { margin: 2px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        
+        input { 
+            width: 15vw; max-width: 80px; 
+            font-size: clamp(1rem, 3vw, 1.4rem); 
+            text-align: center; border-radius: 5px; border: none; padding: 4px; 
+        }
+        
+        button {
+            padding: 6px 12px; font-size: clamp(0.8rem, 2.5vw, 1.1rem); 
+            cursor: pointer; border: none; border-radius: 6px; font-weight: bold;
+        }
         .btn-start { background: var(--success); color: white; }
         .btn-pause { background: #f39c12; color: white; }
-        .btn-mode { background: var(--primary); color: white; opacity: 0.7; }
+        .btn-mode { background: var(--primary); color: white; opacity: 0.6; }
         .btn-mode.active { opacity: 1; outline: 2px solid white; }
 
-        /* 主舞台 - 允許橫向捲動 */
-        #stage { 
-            display: flex; 
-            min-height: calc(100vh - 120px); 
-            width: max-content; /* 關鍵：寬度隨內容撐開 */
-            min-width: 100vw;
-        }
+        /* 主舞台 */
+        #stage { display: flex; height: 82vh; width: 100vw; position: relative; }
 
         .player-area {
-            min-width: 380px; /* 確保每個玩家有足夠的操作空間 */
-            position: relative;
-            border-right: 2px solid #ccc;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            padding-bottom: 40px;
-            background: var(--bg);
+            flex: 1; position: relative; border-right: 1px solid #ccc;
+            display: flex; flex-direction: column; justify-content: flex-end;
+            padding-bottom: 2vh;
         }
 
         .stats-bar {
-            position: absolute; top: 10px; width: 100%; text-align: center;
-            font-size: 1.2rem; color: #555; font-weight: bold;
+            position: absolute; top: 5px; width: 100%; text-align: center;
+            font-size: clamp(0.8rem, 3vw, 1.2rem); color: #555; font-weight: bold;
         }
 
-        /* 直式表格佈局 */
+        /* 響應式直式表格 */
         .math-wrapper {
             display: flex; justify-content: center; align-items: flex-end;
-            margin-bottom: 20px;
+            margin-bottom: 1vh; width: 100%;
         }
         .math-table { border-collapse: collapse; font-family: 'Consolas', monospace; }
+        /* 關鍵：使用變數 --unit 控制大小 */
         .math-table td { 
-            width: var(--cell-size); 
-            height: calc(var(--cell-size) * 1.1); 
+            width: var(--unit); 
+            height: calc(var(--unit) * 1.1); 
             text-align: center; 
-            font-size: calc(var(--cell-size) * 0.7);
+            font-size: calc(var(--unit) * 0.7);
         }
-        .border-bottom { border-bottom: 4px solid #000 !important; }
+        .border-bottom { border-bottom: 3px solid #000 !important; }
 
         .drop-zone {
-            width: 90%; height: 90%; background: #fff; border: 2px dashed #999;
-            border-radius: 10px; display: flex; justify-content: center; align-items: center; margin: 0 auto;
+            width: 85%; height: 85%; background: #fff; border: 1px dashed #999;
+            border-radius: 5px; display: flex; justify-content: center; align-items: center; margin: 0 auto;
         }
-        .drop-zone.filled { border: 3px solid var(--primary); background: #eef7ff; color: var(--primary); font-weight: bold; }
+        .drop-zone.filled { border: 2px solid var(--primary); background: #eef7ff; color: var(--primary); font-weight: bold; }
 
-        /* 數字池 */
+        /* 側邊數字池：手機版會縮小 */
         .side-pool {
-            position: absolute; bottom: 30px; 
-            width: 80px; 
-            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-            background: rgba(255,255,255,0.4); padding: 10px; border-radius: 15px;
+            position: absolute; bottom: 10px; 
+            width: calc(var(--unit) * 1.5); 
+            display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;
+            background: rgba(255,255,255,0.4); padding: 5px; border-radius: 10px;
         }
-        .pool-left { left: 10px; }
-        .pool-right { right: 10px; }
+        .pool-left { left: 5px; }
+        .pool-right { right: 5px; }
 
         .num-piece {
-            width: 60px; height: 60px; background: #fff; border: 3px solid var(--primary);
-            border-radius: 12px; display: flex; justify-content: center; align-items: center;
-            font-size: 1.8rem; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); touch-action: none;
+            width: var(--unit); height: var(--unit);
+            background: #fff; border: 2px solid var(--primary);
+            border-radius: 8px; display: flex; justify-content: center; align-items: center;
+            font-size: calc(var(--unit) * 0.5); font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); touch-action: none;
         }
 
-        /* 遮罩 */
+        /* 錯誤覆蓋層 */
         .area-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: none; justify-content: center; align-items: center;
-            font-size: 2.5rem; font-weight: bold; z-index: 500;
+            font-size: 1.5rem; font-weight: bold; z-index: 500; text-align: center;
         }
         .overlay-error { background: rgba(231, 76, 60, 0.9); color: white; }
         .overlay-pause { background: rgba(236, 240, 241, 0.98); color: #7f8c8d; }
 
-        .dragging { opacity: 0.8; pointer-events: none; position: fixed; z-index: 9999; transform: scale(1.1); }
+        .dragging { opacity: 0.8; pointer-events: none; position: fixed; z-index: 9999; transform: scale(1.2); }
         
         #win-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); display: none; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 5000; color: white;
+            justify-content: center; align-items: center; z-index: 5000; color: white; padding: 20px;
+        }
+
+        /* 手機直向特殊調整 */
+        @media (max-width: 500px) {
+            :root { --unit: 8vw; }
+            .side-pool { width: 12vw; }
+            #header { height: 22vh; }
+            #stage { height: 78vh; }
         }
     </style>
 </head>
@@ -132,20 +138,20 @@
 <div id="header">
     <div class="ctrl-row">
         <input type="number" id="n1" placeholder="被乘數">
-        <span style="font-size: 1.5rem;">×</span>
+        <span>×</span>
         <input type="number" id="n2" placeholder="乘數">
-        <button class="btn-start" onclick="resetGame()">重新出題</button>
-        <button id="pause-btn" class="btn-pause" onclick="togglePause()">開始計時</button>
+        <button class="btn-start" onclick="resetGame()">出題</button>
+        <button id="pause-btn" class="btn-pause" onclick="togglePause()">開始</button>
     </div>
     <div class="ctrl-row">
-        <button id="m-single" class="btn-mode active" onclick="switchMode('single')">單人模式</button>
-        <button id="m-battle" class="btn-mode" onclick="switchMode('battle')">兩人競賽</button>
+        <button id="m-single" class="btn-mode active" onclick="switchMode('single')">單人</button>
+        <button id="m-battle" class="btn-mode" onclick="switchMode('battle')">競賽</button>
     </div>
 </div>
 
 <div id="stage">
     <div id="p1-area" class="player-area">
-        <div id="p1-stats" class="stats-bar">P1 | 時間: 0s | 0 錯</div>
+        <div id="p1-stats" class="stats-bar">P1: 0s | 0 錯</div>
         <div id="p1-pause" class="area-overlay overlay-pause">準備中</div>
         <div id="p1-error" class="area-overlay overlay-error">數字錯囉！</div>
         <div id="p1-pool-l" class="side-pool pool-left"></div>
@@ -153,7 +159,7 @@
         <div id="p1-pool-r" class="side-pool pool-right"></div>
     </div>
     <div id="p2-area" class="player-area" style="display: none;">
-        <div id="p2-stats" class="stats-bar">P2 | 時間: 0s | 0 錯</div>
+        <div id="p2-stats" class="stats-bar">P2: 0s | 0 錯</div>
         <div id="p2-pause" class="area-overlay overlay-pause">準備中</div>
         <div id="p2-error" class="area-overlay overlay-error">數字錯囉！</div>
         <div id="p2-pool-l" class="side-pool pool-left"></div>
@@ -163,8 +169,8 @@
 </div>
 
 <div id="win-screen" onclick="this.style.display='none'">
-    <h1 id="win-text" style="font-size: 3rem;">P1 獲勝！</h1>
-    <p>點擊返回看正確答案</p>
+    <h1 id="win-text">P1 獲勝！</h1>
+    <p>點擊返回看答案</p>
 </div>
 
 <script>
@@ -187,7 +193,7 @@
     function togglePause() {
         paused = !paused;
         const btn = document.getElementById('pause-btn');
-        btn.innerText = paused ? "開始計時" : "暫停計時";
+        btn.innerText = paused ? "開始" : "暫停";
         document.querySelectorAll('.overlay-pause').forEach(el => el.style.display = paused ? 'flex' : 'none');
 
         if (!paused && !timer) {
@@ -203,15 +209,15 @@
     }
 
     function updateStats() {
-        document.getElementById('p1-stats').innerText = `P1 | 時間: ${state.p1.time}s | ${state.p1.err} 錯`;
-        if(mode === 'battle') document.getElementById('p2-stats').innerText = `P2 | 時間: ${state.p2.time}s | ${state.p2.err} 錯`;
+        document.getElementById('p1-stats').innerText = `P1: ${state.p1.time}s | ${state.p1.err} 錯`;
+        if(mode === 'battle') document.getElementById('p2-stats').innerText = `P2: ${state.p2.time}s | ${state.p2.err} 錯`;
     }
 
     function resetGame() {
         clearInterval(timer);
         timer = null;
         paused = true;
-        document.getElementById('pause-btn').innerText = "開始計時";
+        document.getElementById('pause-btn').innerText = "開始";
         document.querySelectorAll('.overlay-pause').forEach(el => el.style.display = 'flex');
 
         let v1 = parseInt(document.getElementById('n1').value) || 123;
@@ -281,10 +287,9 @@
         clone.classList.add('dragging');
         document.body.appendChild(clone);
         
-        // 考量捲動位置
         const move = (ev) => {
-            clone.style.left = ev.clientX - (clone.offsetWidth/2) + 'px';
-            clone.style.top = ev.clientY - (clone.offsetHeight/2) + 'px';
+            clone.style.left = ev.pageX - (clone.offsetWidth/2) + 'px';
+            clone.style.top = ev.pageY - (clone.offsetHeight/2) + 'px';
         };
         move(e);
         originEl.style.visibility = 'hidden';
