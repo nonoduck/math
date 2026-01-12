@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>直式乘法挑戰 - 四年級教學版</title>
+    <title>直式乘法挑戰 - 高年級進階版</title>
     <style>
         :root {
             --primary: #3498db;
@@ -34,17 +34,18 @@
             z-index: 1000;
         }
 
-        .ctrl-row { margin: 3px; display: flex; align-items: center; gap: 15px; }
-        input { width: 90px; font-size: 1.4rem; text-align: center; border-radius: 8px; border: none; padding: 5px; }
+        .ctrl-row { margin: 3px; display: flex; align-items: center; gap: 10px; }
+        input { width: 80px; font-size: 1.2rem; text-align: center; border-radius: 8px; border: 2px solid #ccc; padding: 5px; }
         
         button {
-            padding: 8px 20px; font-size: 1.1rem; cursor: pointer; border: none; border-radius: 8px;
+            padding: 8px 15px; font-size: 1rem; cursor: pointer; border: none; border-radius: 8px;
             transition: 0.2s; font-weight: bold;
         }
         .btn-start { background: var(--success); color: white; }
+        .btn-random { background: #9b59b6; color: white; }
         .btn-pause { background: #f39c12; color: white; }
         .btn-mode { background: var(--primary); color: white; }
-        .btn-mode.active { outline: 3px solid white; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .btn-mode.active { outline: 3px solid white; }
 
         #stage { display: flex; height: 85vh; width: 100vw; position: relative; }
 
@@ -55,42 +56,42 @@
 
         .stats-bar {
             position: absolute; top: 10px; width: 100%; text-align: center;
-            font-size: 1.4rem; color: #555; font-weight: bold;
+            font-size: 1.2rem; color: #555; font-weight: bold;
         }
 
         .math-wrapper {
             display: flex; justify-content: center; align-items: flex-end;
             margin-bottom: 20px;
         }
-        .math-table { border-collapse: collapse; font-size: 3.2rem; font-family: 'Consolas', monospace; }
-        .math-table td { width: 70px; height: 75px; text-align: center; vertical-align: bottom; }
-        .border-bottom { border-bottom: 5px solid #000 !important; }
+        .math-table { border-collapse: collapse; font-size: 2.8rem; font-family: 'Consolas', monospace; }
+        .math-table td { width: 60px; height: 65px; text-align: center; vertical-align: bottom; }
+        .border-bottom { border-bottom: 4px solid #000 !important; }
 
         .drop-zone {
-            width: 60px; height: 65px; background: #fff; border: 2px dashed #999;
-            border-radius: 10px; display: flex; justify-content: center; align-items: center; margin: 0 auto;
+            width: 50px; height: 55px; background: #fff; border: 2px dashed #999;
+            border-radius: 8px; display: flex; justify-content: center; align-items: center; margin: 0 auto;
         }
         .drop-zone.filled { border: 3px solid var(--primary); background: #eef7ff; color: var(--primary); font-weight: bold; }
 
         .side-pool {
-            position: absolute; bottom: 20px; width: 140px; 
-            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
-            background: rgba(255,255,255,0.3); padding: 10px; border-radius: 20px;
+            position: absolute; bottom: 20px; width: 130px; 
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+            background: rgba(255,255,255,0.4); padding: 10px; border-radius: 20px;
         }
         .pool-left { left: 10px; }
         .pool-right { right: 10px; }
 
         .num-piece {
-            width: 60px; height: 60px; background: #fff; border: 3px solid var(--primary);
-            border-radius: 15px; display: flex; justify-content: center; align-items: center;
-            font-size: 2rem; font-weight: bold; cursor: grab; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 50px; height: 50px; background: #fff; border: 3px solid var(--primary);
+            border-radius: 12px; display: flex; justify-content: center; align-items: center;
+            font-size: 1.8rem; font-weight: bold; cursor: grab; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             touch-action: none; z-index: 100;
         }
 
         .area-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: none; justify-content: center; align-items: center;
-            font-size: 3rem; font-weight: bold; z-index: 500; border-radius: 5px;
+            font-size: 3rem; font-weight: bold; z-index: 500;
         }
         .overlay-error { background: rgba(231, 76, 60, 0.85); color: white; }
         .overlay-pause { background: rgba(236, 240, 241, 0.95); color: #7f8c8d; }
@@ -109,9 +110,10 @@
 <div id="header">
     <div class="ctrl-row">
         <input type="number" id="n1" placeholder="被乘數">
-        <span style="font-size: 1.5rem;">×</span>
+        <span style="font-size: 1.2rem;">×</span>
         <input type="number" id="n2" placeholder="乘數">
-        <button class="btn-start" onclick="generateRandom()">隨機出題</button>
+        <button class="btn-start" onclick="resetGame()">開始挑戰</button>
+        <button class="btn-random" onclick="generateRandom()">隨機出題</button>
         <button id="pause-btn" class="btn-pause" onclick="togglePause()">開始計時</button>
     </div>
     <div class="ctrl-row">
@@ -125,17 +127,14 @@
         <div id="p1-stats" class="stats-bar">P1 | 時間: 0s | 錯誤: 0</div>
         <div id="p1-pause" class="area-overlay overlay-pause">準備中</div>
         <div id="p1-error" class="area-overlay overlay-error">數字錯囉！</div>
-        
         <div id="p1-pool-l" class="side-pool pool-left"></div>
         <div id="p1-grid" class="math-wrapper"></div>
         <div id="p1-pool-r" class="side-pool pool-right"></div>
     </div>
-
     <div id="p2-area" class="player-area" style="display: none;">
         <div id="p2-stats" class="stats-bar">P2 | 時間: 0s | 錯誤: 0</div>
         <div id="p2-pause" class="area-overlay overlay-pause">準備中</div>
         <div id="p2-error" class="area-overlay overlay-error">數字錯囉！</div>
-
         <div id="p2-pool-l" class="side-pool pool-left"></div>
         <div id="p2-grid" class="math-wrapper"></div>
         <div id="p2-pool-r" class="side-pool pool-right"></div>
@@ -143,7 +142,7 @@
 </div>
 
 <div id="win-screen" onclick="this.style.display='none'">
-    <h1 id="win-text" style="font-size: 5rem;">P1 勝利！</h1>
+    <h1 id="win-text" style="font-size: 5rem;">挑戰成功！</h1>
     <p style="font-size: 1.5rem;">(點擊關閉，可檢視直式正確答案)</p>
 </div>
 
@@ -195,15 +194,16 @@
         }
     }
 
+    // 隨機按鈕：填入隨機數並執行 resetGame
     function generateRandom() {
-        // 四年級常見範圍：三位數 * 兩位數
-        const v1 = Math.floor(Math.random() * 800) + 123;
-        const v2 = Math.floor(Math.random() * 80) + 12;
+        const v1 = Math.floor(Math.random() * 899) + 101; // 101-999
+        const v2 = Math.floor(Math.random() * 899) + 101; // 101-999
         document.getElementById('n1').value = v1;
         document.getElementById('n2').value = v2;
         resetGame();
     }
 
+    // 開始挑戰按鈕：讀取目前 input 的值，如果沒填才隨機
     function resetGame() {
         clearInterval(timer);
         timer = null;
@@ -211,8 +211,12 @@
         document.getElementById('pause-btn').innerText = "開始計時";
         updateMasks();
 
-        let v1 = parseInt(document.getElementById('n1').value) || 123;
-        let v2 = parseInt(document.getElementById('n2').value) || 45;
+        let v1 = parseInt(document.getElementById('n1').value);
+        let v2 = parseInt(document.getElementById('n2').value);
+
+        // 如果手動輸入為空，則自動補一組隨機數
+        if (isNaN(v1)) { v1 = Math.floor(Math.random() * 899) + 101; document.getElementById('n1').value = v1; }
+        if (isNaN(v2)) { v2 = Math.floor(Math.random() * 899) + 101; document.getElementById('n2').value = v2; }
 
         initPlayer('p1', v1, v2);
         if (mode === 'battle') initPlayer('p2', v1, v2);
@@ -249,18 +253,16 @@
         const answerMap = {};
         const allDigits = [];
 
-        // 第一行：被乘數
         rows.push(s1.padStart(maxW, ' ').split(''));
-        // 第二行：乘數
         rows.push(("×" + s2).padStart(maxW, ' ').split(''));
 
-        // 中間乘法過程
+        // 中間層處理
         if (s2.length > 1) {
             s2Arr.forEach((digit, i) => {
                 let res = (parseInt(digit) * n1).toString();
                 let rowArr = Array(maxW).fill(' ');
                 let chars = res.split('');
-                // 對齊邏輯：從右邊往左數第 i 格開始填數字 (不填補 0)
+                // 對齊：從右往左數第 i 位開始，不補零
                 for(let j = 0; j < chars.length; j++) {
                     let pos = maxW - 1 - i - j;
                     if (pos >= 0) rowArr[pos] = chars[chars.length - 1 - j];
@@ -269,7 +271,6 @@
             });
         }
         
-        // 最後一行：總和
         rows.push(total.toString().padStart(maxW, ' ').split(''));
 
         let html = '<table class="math-table">';
@@ -279,7 +280,6 @@
             html += '<tr>';
             row.forEach((char, cIdx) => {
                 const b = isLine ? 'border-bottom' : '';
-                // 只有數字且在答案區才變成空格，空格 ' ' 則不處理
                 if (/\d/.test(char) && isAnsArea) {
                     const id = `c-${rIdx}-${cIdx}`;
                     answerMap[id] = char;
@@ -303,8 +303,8 @@
         document.body.appendChild(clone);
         
         const move = (ev) => {
-            clone.style.left = ev.pageX - 30 + 'px';
-            clone.style.top = ev.pageY - 30 + 'px';
+            clone.style.left = ev.pageX - 25 + 'px';
+            clone.style.top = ev.pageY - 25 + 'px';
         };
         move(e);
         el.style.visibility = 'hidden';
@@ -353,7 +353,7 @@
         if (Object.keys(state[p].target).length === Object.keys(state[p].current).length) {
             state[p].finished = true;
             if (mode === 'single') {
-                showWin("完成挑戰！");
+                showWin("挑戰成功！");
             } else if (state.p1.finished && state.p2.finished) {
                 const s1 = state.p1.time + state.p1.err * 5;
                 const s2 = state.p2.time + state.p2.err * 5;
@@ -368,6 +368,7 @@
         document.getElementById('win-screen').style.display = 'flex';
     }
 
+    // 初始化：先隨機出一題
     generateRandom();
 </script>
 </body>
